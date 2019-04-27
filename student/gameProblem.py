@@ -29,15 +29,42 @@ class GameProblem(SearchProblem):
     def actions(self, state):
         '''Returns a LIST of the actions that may be executed in this state
         '''
+        x = state[0]
+        y = state[1]
         acciones = []
-        
+
+        print("state: ", self.getStateData(state))
+
+        if x == 0:
+            acciones.append(self.MOVES[2])
+        else:
+            acciones.append(self.MOVES[0])
+            acciones.append(self.MOVES[2])
+
+        if y == 0:
+            acciones.append(self.MOVES[3])
+        else:
+            acciones.append(self.MOVES[1])
+            acciones.append(self.MOVES[3])
+            
+        print("acciones: ", acciones)
         return acciones
     
 
     def result(self, state, action):
         '''Returns the state reached from this state when the given action is executed
         '''
-        next_state = 0
+        x = state[0]
+        y = state[1]
+
+        if action == self.MOVES[0]:
+            next_state = (x-1, y)
+        elif action == self.MOVES[1]:
+            next_state = (x, y-1)
+        elif action == self.MOVES[2]:
+            next_state = (x+1, y)
+        elif action == self.MOVES[3]:
+            next_state = (x, y+1)
 
         return next_state
 
@@ -45,7 +72,10 @@ class GameProblem(SearchProblem):
     def is_goal(self, state):
         '''Returns true if state is the final state
         '''
-        return True
+        if state == self.GOAL:
+            return True
+        else:
+            return False
 
     def cost(self, state, action, state2):
         '''Returns the cost of applying `action` from `state` to `state2`.
@@ -72,8 +102,8 @@ class GameProblem(SearchProblem):
 	print 'POSITIONS: ', self.POSITIONS, '\n'
 	print 'CONFIG: ', self.CONFIG, '\n'
 
-        initial_state = None
-        final_state= None
+        initial_state = self.AGENT_START
+        final_state = (10,3)
         algorithm= simpleai.search.astar
         #algorithm= simpleai.search.breadth_first
         #algorithm= simpleai.search.depth_first
