@@ -61,7 +61,18 @@ class GameProblem(SearchProblem):
         if not self.isInMapBounds(next_state):
             return False
 
+        if self.isBuilding(next_state):
+            return False
+
         return True
+
+    def isBuilding(self, state):
+        x = state[0]
+        y = state[1]
+        if self.MAP[x][y][0] == 'building':
+            return True
+
+        return False
 
     def isInMapBounds(self, state):
         x = state[0]
