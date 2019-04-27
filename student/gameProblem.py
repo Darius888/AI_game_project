@@ -29,53 +29,77 @@ class GameProblem(SearchProblem):
     def actions(self, state):
         '''Returns a LIST of the actions that may be executed in this state
         '''
-        x = state[0]
-        y = state[1]
         acciones = []
 
-        print("state: ", self.getStateData(state))
-
-        if x == 0:
-            acciones.append(self.MOVES[2])
-        else:
+        if self.canMove(state, self.MOVES[0]): 
             acciones.append(self.MOVES[0])
+
+        if self.canMove(state, self.MOVES[1]):
+            acciones.append(self.MOVES[1])
+
+        if self.canMove(state, self.MOVES[2]):
             acciones.append(self.MOVES[2])
 
-        if y == 0:
-            acciones.append(self.MOVES[3])
-        else:
-            acciones.append(self.MOVES[1])
+        if self.canMove(state, self.MOVES[3]):
             acciones.append(self.MOVES[3])
             
-        print("acciones: ", acciones)
         return acciones
     
 
     def result(self, state, action):
         '''Returns the state reached from this state when the given action is executed
         '''
-        x = state[0]
-        y = state[1]
-
-        if action == self.MOVES[0]:
-            next_state = (x-1, y)
-        elif action == self.MOVES[1]:
-            next_state = (x, y-1)
-        elif action == self.MOVES[2]:
-            next_state = (x+1, y)
-        elif action == self.MOVES[3]:
-            next_state = (x, y+1)
+        if action in self.MOVES:
+            next_state = self.computeNextState(state, action)
 
         return next_state
 
+
+    def canMove(self, state, direction):
+        next_state = self.computeNextState(state, direction)
+        
+        if not self.isInMapBounds(next_state):
+            return False
+
+        return True
+
+    def isInMapBounds(self, state):
+        x = state[0]
+        y = state[1]
+        map_len_x = len(self.MAP)
+        map_len_y = len(self.MAP[0])
+
+        if (x < 0 or y < 0 or x >= map_len_x or y >= map_len_y):
+            return False
+
+        return True
+
+
+    def computeNextState(self, state, direction):
+        x = state[0]
+        y = state[1]
+        next_state = None
+
+        if direction not in self.MOVES:
+            raise ValueError("Given direction must be one of: " + direction)
+
+        if direction == self.MOVES[0]:
+            next_state = (x-1, y)
+        elif direction == self.MOVES[1]:
+            next_state = (x, y-1)
+        elif direction == self.MOVES[2]:
+            next_state = (x+1, y)
+        elif direction == self.MOVES[3]:
+            next_state = (x, y+1)
+
+        return next_state
 
     def is_goal(self, state):
         '''Returns true if state is the final state
         '''
         if state == self.GOAL:
             return True
-        else:
-            return False
+        return False
 
     def cost(self, state, action, state2):
         '''Returns the cost of applying `action` from `state` to `state2`.
@@ -103,7 +127,14 @@ class GameProblem(SearchProblem):
 	print 'CONFIG: ', self.CONFIG, '\n'
 
         initial_state = self.AGENT_START
-        final_state = (10,3)
+        final_state = (9,3)
+        map_size = (len(self.MAP), len(self.MAP[0]))
+
+        if not self.isInMapBounds(initial_state) or not self.isInMapBounds(final_state):
+            raise ValueError("Initial and final state must be inside map bounds.\n"\
+            "Map size: {size}. Initial state: {initial}. Final state: {final}. Mind the index values."\
+            .format(size = map_size, initial = initial_state, final = final_state))
+
         algorithm= simpleai.search.astar
         #algorithm= simpleai.search.breadth_first
         #algorithm= simpleai.search.depth_first
