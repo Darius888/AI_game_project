@@ -21,6 +21,7 @@ class GameProblem(SearchProblem):
     SHOPS=None
     CUSTOMERS=None
     MAXBAGS = 0
+    PIZZAS = 0
 
     MOVES = ('West','North','East','South')
 
@@ -74,6 +75,30 @@ class GameProblem(SearchProblem):
 
         return False
 
+    def loadPizzas(self, state):
+        x = state[0]
+        y = state[1]
+        if self.isRestaurant(state):
+            self.PIZZAS = 2
+
+        return self.PIZZAS
+
+    def isCustomer(self, state):
+	x = state[0]
+	y = state[1]
+	if self.MAP[x][y][0] == 'customer0' or self.MAP[x][y][0] == 'customer1' or self.MAP[x][y][0] == 'customer2':
+	    return True
+	
+	return False	
+
+    def isRestaurant(self, state):
+	x = state[0]
+	y = state[1]
+	if self.MAP[x][y][0] == 'pizza':
+	    return True
+	
+	return False
+
     def isInMapBounds(self, state):
         x = state[0]
         y = state[1]
@@ -108,8 +133,17 @@ class GameProblem(SearchProblem):
     def is_goal(self, state):
         '''Returns true if state is the final state
         '''
-        if state == self.GOAL:
+        #if state == self.isRestaurant(state) and self.loadPizzas(self, state):
+        #    self.GOAL = (9,3)
+
+        if state == self.GOAL and self.isRestaurant(state):
+            self.loadPizzas(state)
+            self.GOAL = (9,3)
+        
+        if state == (9,3) and self.isCustomer(state):
+            self.GOAL = self.AGENT_START 
             return True
+
         return False
 
     def cost(self, state, action, state2):
@@ -138,7 +172,7 @@ class GameProblem(SearchProblem):
 	print 'CONFIG: ', self.CONFIG, '\n'
 
         initial_state = self.AGENT_START
-        final_state = (9,3)
+        final_state = (6,0)
         map_size = (len(self.MAP), len(self.MAP[0]))
 
         if not self.isInMapBounds(initial_state) or not self.isInMapBounds(final_state):
