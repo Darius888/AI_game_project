@@ -20,10 +20,10 @@ class GameProblem(SearchProblem):
     AGENT_START=None
     SHOPS=None
     CUSTOMERS=None
-    MAXBAGS = 0
-    PIZZAS = 0
+    MAXBAGS = 2
 
     MOVES = ('West','North','East','South')
+    ACTIONS = ('Load', 'Deliver')
 
    # --------------- Common functions to a SearchProblem -----------------
 
@@ -44,6 +44,12 @@ class GameProblem(SearchProblem):
         if self.canMove(state, self.MOVES[3]):
             acciones.append(self.MOVES[3])
             
+        if self.isRestaurant(state) and state[2] < self.MAXBAGS:
+            acciones.append(self.ACTIONS[0])
+
+        if self.isCustomer(state) and state[2] > 0:
+            acciones.append(self.ACTIONS[1])
+
         return acciones
     
 
@@ -52,6 +58,12 @@ class GameProblem(SearchProblem):
         '''
         if action in self.MOVES:
             next_state = self.computeNextState(state, action)
+
+        if action == self.ACTIONS[0]:
+            next_state = (state[0], state[1], self.MAXBAGS, 0)
+
+        if action == self.ACTIONS[1]:
+            next_state = (state[0], state[1], 0, 1)
 
         return next_state
 
@@ -120,28 +132,20 @@ class GameProblem(SearchProblem):
             raise ValueError("Given direction must be one of: " + direction)
 
         if direction == self.MOVES[0]:
-            next_state = (x-1, y)
+            next_state = (x-1, y, state[2], state[3])
         elif direction == self.MOVES[1]:
-            next_state = (x, y-1)
+            next_state = (x, y-1, state[2], state[3])
         elif direction == self.MOVES[2]:
-            next_state = (x+1, y)
+            next_state = (x+1, y, state[2], state[3])
         elif direction == self.MOVES[3]:
-            next_state = (x, y+1)
+            next_state = (x, y+1, state[2], state[3])
 
         return next_state
 
     def is_goal(self, state):
         '''Returns true if state is the final state
         '''
-        #if state == self.isRestaurant(state) and self.loadPizzas(self, state):
-        #    self.GOAL = (9,3)
-
-        if state == self.GOAL and self.isRestaurant(state):
-            self.loadPizzas(state)
-            self.GOAL = (9,3)
-        
-        if state == (9,3) and self.isCustomer(state):
-            self.GOAL = self.AGENT_START 
+        if state == self.GOAL:
             return True
 
         return False
@@ -158,7 +162,6 @@ class GameProblem(SearchProblem):
         '''
         return 0
 
-
     def setup (self):
         '''This method must create the initial state, final state (if desired) and specify the algorithm to be used.
            This values are later stored as globals that are used when calling the search algorithm.
@@ -171,8 +174,8 @@ class GameProblem(SearchProblem):
 	print 'POSITIONS: ', self.POSITIONS, '\n'
 	print 'CONFIG: ', self.CONFIG, '\n'
 
-        initial_state = self.AGENT_START
-        final_state = (6,0)
+        initial_state = (self.AGENT_START[0], self.AGENT_START[1], 0, 0)
+        final_state = (self.AGENT_START[0], self.AGENT_START[1], 0, 1)
         map_size = (len(self.MAP), len(self.MAP[0]))
 
         if not self.isInMapBounds(initial_state) or not self.isInMapBounds(final_state):
@@ -200,9 +203,9 @@ class GameProblem(SearchProblem):
         '''
         return None
 
-    # -------------------------------------------------------------- #
-    # --------------- DO NOT EDIT BELOW THIS LINE  ----------------- #
-    # -------------------------------------------------------------- #
+   # -------------------------------------------------------------- #
+   # --------------- DO NOT EDIT BELOW THIS LINE  ----------------- #
+   # -------------------------------------------------------------- #
 
     def getAttribute (self, position, attributeName):
         '''Returns an attribute value for a given position of the map
@@ -247,4 +250,3 @@ class GameProblem(SearchProblem):
         return True
         
     # END initializeProblem 
-
