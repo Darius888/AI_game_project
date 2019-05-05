@@ -57,90 +57,16 @@ class GameProblem(SearchProblem):
         '''Returns the state reached from this state when the given action is executed
         '''
         if action in self.MOVES:
-            next_state = self.computeNextState(state, action)
+            next_state = self.move(state, action)
 
         if action == self.ACTIONS[0]:
-            next_state = (state[0], state[1], self.MAXBAGS, 0)
+            next_state = self.loadPizzas(state)
 
         if action == self.ACTIONS[1]:
-            next_state = (state[0], state[1], 0, 1)
+            next_state = self.deliver(state)
 
         return next_state
 
-
-    def canMove(self, state, direction):
-        next_state = self.computeNextState(state, direction)
-        
-        if not self.isInMapBounds(next_state):
-            return False
-
-        if self.isBuilding(next_state):
-            return False
-
-        return True
-
-    def isBuilding(self, state):
-        x = state[0]
-        y = state[1]
-        if self.MAP[x][y][0] == 'building':
-            return True
-
-        return False
-
-    def loadPizzas(self, state):
-        x = state[0]
-        y = state[1]
-        if self.isRestaurant(state):
-            self.PIZZAS = 2
-
-        return self.PIZZAS
-
-    def isCustomer(self, state):
-	x = state[0]
-	y = state[1]
-	if self.MAP[x][y][0] == 'customer0' or self.MAP[x][y][0] == 'customer1' or self.MAP[x][y][0] == 'customer2':
-	    return True
-	
-	return False	
-
-    def isRestaurant(self, state):
-	x = state[0]
-	y = state[1]
-	if self.MAP[x][y][0] == 'pizza':
-	    return True
-	
-	return False
-
-    def isInMapBounds(self, state):
-        x = state[0]
-        y = state[1]
-        map_len_x = len(self.MAP)
-        map_len_y = len(self.MAP[0])
-
-        if (x < 0 or y < 0 or x >= map_len_x or y >= map_len_y):
-            return False
-
-        return True
-
-
-    def computeNextState(self, state, direction):
-        x = state[0]
-        y = state[1]
-        next_state = None
-
-        if direction not in self.MOVES:
-            raise ValueError("Given direction must be one of: " + direction)
-
-        if direction == self.MOVES[0]:
-            next_state = (x-1, y, state[2], state[3])
-        elif direction == self.MOVES[1]:
-            next_state = (x, y-1, state[2], state[3])
-        elif direction == self.MOVES[2]:
-            next_state = (x+1, y, state[2], state[3])
-        elif direction == self.MOVES[3]:
-            next_state = (x, y+1, state[2], state[3])
-
-        return next_state
 
     def is_goal(self, state):
         '''Returns true if state is the final state
@@ -150,6 +76,7 @@ class GameProblem(SearchProblem):
 
         return False
 
+
     def cost(self, state, action, state2):
         '''Returns the cost of applying `action` from `state` to `state2`.
            The returned value is a number (integer or floating point).
@@ -157,10 +84,12 @@ class GameProblem(SearchProblem):
         '''
         return 1
 
+
     def heuristic(self, state):
         '''Returns the heuristic for `state`
         '''
         return 0
+
 
     def setup (self):
         '''This method must create the initial state, final state (if desired) and specify the algorithm to be used.
@@ -179,8 +108,8 @@ class GameProblem(SearchProblem):
         map_size = (len(self.MAP), len(self.MAP[0]))
 
         if not self.isInMapBounds(initial_state) or not self.isInMapBounds(final_state):
-            raise ValueError("Initial and final state must be inside map bounds.\n"\
-            "Map size: {size}. Initial state: {initial}. Final state: {final}. Mind the index values."\
+            raise ValueError('Initial and final state must be inside map bounds.\n'\
+            'Map size: {size}. Initial state: {initial}. Final state: {final}. Mind the index values.'\
             .format(size = map_size, initial = initial_state, final = final_state))
 
         algorithm= simpleai.search.astar
@@ -202,6 +131,105 @@ class GameProblem(SearchProblem):
             This information is used to show the proper customer image.
         '''
         return None
+
+   # -------------------------------------------------------------- #
+   # ---------------------- HELPER METHODS ------------------------ #
+   # -------------------------------------------------------------- #
+
+    # Computes the next state when 'move' action is applied
+    def move(self, state, direction):
+        x = state[0]
+        y = state[1]
+        pizzas = state[2]
+        isSatisfied = state[3]
+
+        if direction not in self.MOVES:
+            raise ValueError('Given direction must be one of: ' + self.MOVES + ' but is: ' + direction)
+
+        if direction == self.MOVES[0]:
+            next_state = (x-1, y, pizzas, isSatisfied)
+        elif direction == self.MOVES[1]:
+            next_state = (x, y-1, pizzas, isSatisfied)
+        elif direction == self.MOVES[2]:
+            next_state = (x+1, y, pizzas, isSatisfied)
+        elif direction == self.MOVES[3]:
+            next_state = (x, y+1, pizzas, isSatisfied)
+
+        return next_state
+
+
+    # Computes the next state when 'load' action is applied
+    def loadPizzas(self, state):
+        x = state[0]
+        y = state[1]
+        pizzas = self.MAXBAGS
+        isSatisfied = state[3]
+        next_state = (x, y, pizzas, isSatisfied)        
+
+        return next_state
+
+
+    # Computes the next state when 'deliver' action is applied
+    def deliver(self, state):
+        x = state[0]
+        y = state[1]
+        pizzas = 0
+        isSatisfied = 1
+        next_state = (x, y, pizzas, isSatisfied)        
+
+        return next_state
+
+
+    def isBuilding(self, state):
+        x = state[0]
+        y = state[1]
+        if self.MAP[x][y][0] == 'building':
+            return True
+
+        return False
+
+
+    def isCustomer(self, state):
+	x = state[0]
+	y = state[1]
+	if 'customer' in self.MAP[x][y][0]:
+	    return True
+	
+	return False	
+
+
+    def isRestaurant(self, state):
+	x = state[0]
+	y = state[1]
+	if self.MAP[x][y][0] == 'pizza':
+	    return True
+	
+	return False
+
+
+    def canMove(self, state, direction):
+        next_state = self.move(state, direction)
+        
+        if not self.isInMapBounds(next_state):
+            return False
+
+        if self.isBuilding(next_state):
+            return False
+
+        return True
+
+
+    def isInMapBounds(self, state):
+        x = state[0]
+        y = state[1]
+        map_len_x = len(self.MAP)
+        map_len_y = len(self.MAP[0])
+
+        if (x < 0 or y < 0 or x >= map_len_x or y >= map_len_y):
+            return False
+
+        return True
+
 
    # -------------------------------------------------------------- #
    # --------------- DO NOT EDIT BELOW THIS LINE  ----------------- #
