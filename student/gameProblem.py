@@ -21,6 +21,8 @@ class GameProblem(SearchProblem):
     SHOPS=None
     CUSTOMERS=None
     MAXBAGS = 2
+    # Map size (x-dimension size, y-dimension size)
+    MAP_SIZE = None
 
     MOVES = ('West','North','East','South')
     ACTIONS = ('Load', 'Deliver')
@@ -105,12 +107,13 @@ class GameProblem(SearchProblem):
 
         initial_state = (self.AGENT_START[0], self.AGENT_START[1], 0, 0)
         final_state = (self.AGENT_START[0], self.AGENT_START[1], 0, 1)
-        map_size = (len(self.MAP), len(self.MAP[0]))
+        self.MAP_SIZE = {'x': len(self.MAP), 'y': len(self.MAP[0])}
+        self.CUSTOMERS = self.getCustomers()
 
         if not self.isInMapBounds(initial_state) or not self.isInMapBounds(final_state):
             raise ValueError('Initial and final state must be inside map bounds.\n'\
             'Map size: {size}. Initial state: {initial}. Final state: {final}. Mind the index values.'\
-            .format(size = map_size, initial = initial_state, final = final_state))
+            .format(size = self.MAP_SIZE, initial = initial_state, final = final_state))
 
         algorithm= simpleai.search.astar
         #algorithm= simpleai.search.breadth_first
@@ -190,21 +193,23 @@ class GameProblem(SearchProblem):
 
 
     def isCustomer(self, state):
-	x = state[0]
-	y = state[1]
-	if 'customer' in self.MAP[x][y][0]:
-	    return True
-	
-	return False	
+        x = state[0]
+        y = state[1]
+
+        if (x, y) in self.CUSTOMERS:
+            return True
+
+        return False	
 
 
     def isRestaurant(self, state):
-	x = state[0]
-	y = state[1]
-	if self.MAP[x][y][0] == 'pizza':
-	    return True
-	
-	return False
+        x = state[0]
+        y = state[1]
+        
+        if self.MAP[x][y][0] == 'pizza':
+            return True
+        
+        return False
 
 
     def canMove(self, state, direction):
@@ -222,14 +227,26 @@ class GameProblem(SearchProblem):
     def isInMapBounds(self, state):
         x = state[0]
         y = state[1]
-        map_len_x = len(self.MAP)
-        map_len_y = len(self.MAP[0])
+        map_len_x = self.MAP_SIZE['x']
+        map_len_y = self.MAP_SIZE['y']
 
         if (x < 0 or y < 0 or x >= map_len_x or y >= map_len_y):
             return False
 
         return True
 
+
+    # Parses the map and checks for customers and their orders.
+    # Returns the dictionary with records like (x, y): number_of_orders.
+    def getCustomers(self):
+        customers = {}
+        for x in range(self.MAP_SIZE['x']):
+            for y in range(self.MAP_SIZE['y']):
+                if 'customer' in self.MAP[x][y][0]:
+                    customers[(x, y)] = self.MAP[x][y][2]['objects'] # number of orders (pizzas)
+        
+        return customers
+        
 
    # -------------------------------------------------------------- #
    # --------------- DO NOT EDIT BELOW THIS LINE  ----------------- #
