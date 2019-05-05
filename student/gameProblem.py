@@ -33,6 +33,10 @@ class GameProblem(SearchProblem):
         '''Returns a LIST of the actions that may be executed in this state
         '''
         acciones = []
+        x = state[0]
+        y = state[1]
+        pizzas = state[2]
+
 
         if self.canMove(state, self.MOVES[0]): 
             acciones.append(self.MOVES[0])
@@ -46,10 +50,10 @@ class GameProblem(SearchProblem):
         if self.canMove(state, self.MOVES[3]):
             acciones.append(self.MOVES[3])
             
-        if self.isShop(state) and state[2] < self.MAXBAGS:
+        if self.isShop(state) and pizzas < self.MAXBAGS:
             acciones.append(self.ACTIONS[0])
 
-        if self.isCustomer(state) and state[2] > 0:
+        if self.isCustomer(state) and pizzas > 0:
             acciones.append(self.ACTIONS[1])
 
         return acciones
@@ -100,21 +104,46 @@ class GameProblem(SearchProblem):
 
            It also must set the values of the object attributes that the methods need, as for example, self.SHOPS or self.MAXBAGS
         '''
-
-        print '\nMAP: ', self.MAP, '\n'
-	print 'POSITIONS: ', self.POSITIONS, '\n'
-	print 'CONFIG: ', self.CONFIG, '\n'
-
-        initial_state = (self.AGENT_START[0], self.AGENT_START[1], 0, 0)
-        final_state = (self.AGENT_START[0], self.AGENT_START[1], 0, 1)
         self.MAP_SIZE = {'x': len(self.MAP), 'y': len(self.MAP[0])}
         self.CUSTOMERS = self.getCustomers()
         self.SHOPS = self.getShops()
 
+        print '\nMAP: ', self.MAP, '\n'
+        print 'POSITIONS: ', self.POSITIONS, '\n'
+        print 'CONFIG: ', self.CONFIG, '\n'
+        print 'CUSTOMERS', self.CUSTOMERS, '\n'
+        print 'SHOPS', self.SHOPS, '\n'
+    
+        # Constraints for basic version
+        if len(self.CUSTOMERS) != 1:
+            raise ValueError("There must be exactly one customer in the basic version. "\
+                'Currently: {customers}'.format(customers = len(self.CUSTOMERS)))
+
+        if len(self.SHOPS) != 1:
+            raise ValueError("There must be exactly one shop in the basic version. "\
+                'Currently: {shops}'.format(shops = len(self.SHOPS)))
+
+        pizzas_to_order = self.CUSTOMERS.values()[0]
+        if pizzas_to_order > 2:
+            raise ValueError('The customer cannot order more than 2 pizzas in the basic version. '\
+                'Currently wants to order: {pizzas}'.format(pizzas = pizzas_to_order))         
+
+        # only 1 customer in basic version
+        customer_position = self.CUSTOMERS.keys()[0]
+        customer_orders = self.CUSTOMERS[customer_position]
+
+        # state: (x, y, pizzas, customer_x, customer_y, orders_left)
+        initial_state = (self.AGENT_START[0], self.AGENT_START[1], 0, 
+            customer_position[0], customer_position[1], customer_orders)
+        final_state = (self.AGENT_START[0], self.AGENT_START[1], 0, 
+            customer_position[0], customer_position[1], 0)
+
+        # validation and constraints
         if not self.isInMapBounds(initial_state) or not self.isInMapBounds(final_state):
             raise ValueError('Initial and final state must be inside map bounds.\n'\
             'Map size: {size}. Initial state: {initial}. Final state: {final}. Mind the index values.'\
             .format(size = self.MAP_SIZE, initial = initial_state, final = final_state))
+
 
         algorithm= simpleai.search.astar
         #algorithm= simpleai.search.breadth_first
@@ -126,7 +155,7 @@ class GameProblem(SearchProblem):
     def printState (self,state):
         '''Return a string to pretty-print the state '''
         
-        pps=''
+        pps=state
         return (pps)
 
     def getPendingRequests (self,state):
@@ -134,6 +163,10 @@ class GameProblem(SearchProblem):
             MUST return None if the position is not a customer.
             This information is used to show the proper customer image.
         '''
+        orders = state[5]
+        if self.isCustomer(state):
+            return orders
+
         return None
 
    # -------------------------------------------------------------- #
@@ -145,19 +178,21 @@ class GameProblem(SearchProblem):
         x = state[0]
         y = state[1]
         pizzas = state[2]
-        isSatisfied = state[3]
+        customer_x = state[3]
+        customer_y = state[4]
+        orders_left = state[5]
 
         if direction not in self.MOVES:
             raise ValueError('Given direction must be one of: ' + self.MOVES + ' but is: ' + direction)
 
         if direction == self.MOVES[0]:
-            next_state = (x-1, y, pizzas, isSatisfied)
+            next_state = (x-1, y, pizzas, customer_x, customer_y, orders_left)
         elif direction == self.MOVES[1]:
-            next_state = (x, y-1, pizzas, isSatisfied)
+            next_state = (x, y-1, pizzas, customer_x, customer_y, orders_left)
         elif direction == self.MOVES[2]:
-            next_state = (x+1, y, pizzas, isSatisfied)
+            next_state = (x+1, y, pizzas, customer_x, customer_y, orders_left)
         elif direction == self.MOVES[3]:
-            next_state = (x, y+1, pizzas, isSatisfied)
+            next_state = (x, y+1, pizzas, customer_x, customer_y, orders_left)
 
         return next_state
 
@@ -166,9 +201,12 @@ class GameProblem(SearchProblem):
     def loadPizzas(self, state):
         x = state[0]
         y = state[1]
-        pizzas = self.MAXBAGS
-        isSatisfied = state[3]
-        next_state = (x, y, pizzas, isSatisfied)        
+        customer_x = state[3]
+        customer_y = state[4]
+        orders_left = state[5]
+
+        pizzas = min(self.MAXBAGS, orders_left)
+        next_state = (x, y, pizzas, customer_x, customer_y, orders_left)        
 
         return next_state
 
@@ -177,9 +215,14 @@ class GameProblem(SearchProblem):
     def deliver(self, state):
         x = state[0]
         y = state[1]
-        pizzas = 0
-        isSatisfied = 1
-        next_state = (x, y, pizzas, isSatisfied)        
+        pizzas = state[2]
+        customer_x = state[3]
+        customer_y = state[4]
+        orders = state[5]
+
+        orders_left = max(orders - pizzas, 0)
+        pizzas_left = max(pizzas - orders, 0)
+        next_state = (x, y, pizzas_left, customer_x, customer_y, orders_left)        
 
         return next_state
 
@@ -244,7 +287,10 @@ class GameProblem(SearchProblem):
         for x in range(self.MAP_SIZE['x']):
             for y in range(self.MAP_SIZE['y']):
                 if 'customer' in self.MAP[x][y][0]:
-                    customers[(x, y)] = self.MAP[x][y][2]['objects'] # number of orders (pizzas)
+                    orders = self.MAP[x][y][2]['objects'] # number of orders (pizzas)
+                    if orders == 0:
+                        raise ValueError('Customer must order at least 1 pizza. Currently: 0')
+                    customers[(x, y)] = orders
         
         return customers
 
