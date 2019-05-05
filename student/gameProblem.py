@@ -46,7 +46,7 @@ class GameProblem(SearchProblem):
         if self.canMove(state, self.MOVES[3]):
             acciones.append(self.MOVES[3])
             
-        if self.isRestaurant(state) and state[2] < self.MAXBAGS:
+        if self.isShop(state) and state[2] < self.MAXBAGS:
             acciones.append(self.ACTIONS[0])
 
         if self.isCustomer(state) and state[2] > 0:
@@ -109,6 +109,7 @@ class GameProblem(SearchProblem):
         final_state = (self.AGENT_START[0], self.AGENT_START[1], 0, 1)
         self.MAP_SIZE = {'x': len(self.MAP), 'y': len(self.MAP[0])}
         self.CUSTOMERS = self.getCustomers()
+        self.SHOPS = self.getShops()
 
         if not self.isInMapBounds(initial_state) or not self.isInMapBounds(final_state):
             raise ValueError('Initial and final state must be inside map bounds.\n'\
@@ -202,11 +203,11 @@ class GameProblem(SearchProblem):
         return False	
 
 
-    def isRestaurant(self, state):
+    def isShop(self, state):
         x = state[0]
         y = state[1]
         
-        if self.MAP[x][y][0] == 'pizza':
+        if (x, y) in self.SHOPS:
             return True
         
         return False
@@ -236,8 +237,8 @@ class GameProblem(SearchProblem):
         return True
 
 
-    # Parses the map and checks for customers and their orders.
-    # Returns the dictionary with records like (x, y): number_of_orders.
+    # Parses the map and searches for customers' locations and their orders.
+    # Returns the dictionary with records like: (x, y): number_of_orders.
     def getCustomers(self):
         customers = {}
         for x in range(self.MAP_SIZE['x']):
@@ -246,7 +247,17 @@ class GameProblem(SearchProblem):
                     customers[(x, y)] = self.MAP[x][y][2]['objects'] # number of orders (pizzas)
         
         return customers
+
+    # Parses the map and searches for shops' locations.
+    # Returns the list of tuples: (x, y).
+    def getShops(self):
+        shops = []
+        for x in range(self.MAP_SIZE['x']):
+            for y in range(self.MAP_SIZE['y']):
+                if 'pizza' in self.MAP[x][y][0]:
+                    shops.append((x, y))
         
+        return shops
 
    # -------------------------------------------------------------- #
    # --------------- DO NOT EDIT BELOW THIS LINE  ----------------- #
