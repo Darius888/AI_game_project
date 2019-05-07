@@ -88,7 +88,39 @@ class GameProblem(SearchProblem):
            The returned value is a number (integer or floating point).
            By default this function returns `1`.
         '''
-        return 1
+        cost = 0
+        x = state[0]
+        y = state[1]
+
+        cost = self.getAttribute((x,y),'cost')
+
+       
+        if(self.ACTIONS == 'Load'):
+            cost = 4
+
+        if(self.ACTIONS == 'Deliver'):
+            cost = 4
+
+        if(state2[2] > 0):
+            cost = 6
+
+        # if(self.isShop1(state2) and self.ACTIONS == 'Load'):
+        #     cost = 3
+
+        # if(self.isShop2(state2) and self.ACTIONS == 'Load'):
+        #     cost = 4
+
+        # if(state2[2] == 0):
+        #     cost = 1
+
+        # if(state[2] == 1):
+        #     cost = 2
+
+        # if(self.state[2] > 0):
+        #     cost = 6
+
+
+        return cost
 
 
     def heuristic(self, state):
@@ -231,6 +263,22 @@ class GameProblem(SearchProblem):
         x = state[0]
         y = state[1]
         if self.MAP[x][y][0] == 'building':
+            return True
+
+        return False
+
+    def isForest(self, state):
+        x = state[0]
+        y = state[1]
+        if self.MAP[x][y][0] == 'forest':
+            return True
+
+        return False
+
+    def isDessert(self, state):
+        x = state[0]
+        y = state[1]
+        if self.MAP[x][y][0] == 'dessert':
             return True
 
         return False
