@@ -94,7 +94,34 @@ class GameProblem(SearchProblem):
     def heuristic(self, state):
         '''Returns the heuristic for `state`
         '''
-        return 0
+        x = state[0]
+        y = state[1]
+        pizzas = state[2]
+        customer_x = state[3]
+        customer_y = state[4]
+        orders_left = state[5]
+
+        shop_x = self.SHOPS[0][0]
+        shop_y = self.SHOPS[0][1]
+
+        distance = 0
+        if (pizzas < orders_left):
+            man_shop_dist = abs(x - shop_x) + abs(y - shop_y)
+            distance += man_shop_dist
+
+        if (orders_left != 0):
+            shop_customer_dist = abs(shop_x - customer_x) + abs(shop_y - customer_y)
+            man_customer_dist = abs(x - customer_x) + abs(y - customer_y)
+            distance += min(shop_customer_dist, man_customer_dist)
+
+            customer_back_dist =  abs(customer_x - self.GOAL[0]) + abs(customer_y - self.GOAL[1])
+            distance += customer_back_dist
+
+        if (orders_left == 0):
+            man_back_dist = abs(x - self.GOAL[0]) + abs(y - self.GOAL[1])
+            distance += man_back_dist
+
+        return distance
 
 
     def setup (self):
@@ -145,6 +172,7 @@ class GameProblem(SearchProblem):
             .format(size = self.MAP_SIZE, initial = initial_state, final = final_state))
 
 
+        #algorithm= simpleai.search.greedy
         algorithm= simpleai.search.astar
         #algorithm= simpleai.search.breadth_first
         #algorithm= simpleai.search.depth_first
