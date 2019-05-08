@@ -10,7 +10,7 @@
 
 import os,sys
 
-sys.path.append(os.path.abspath("./student"))
+sys.path.append(os.path.abspath("./student_adv"))
 sys.path.append(os.path.abspath("./game"))
 sys.path.append(os.path.abspath("./simpleai-0.8.1"))
 
