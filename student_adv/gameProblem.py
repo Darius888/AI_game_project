@@ -85,7 +85,39 @@ class GameProblem(SearchProblem):
            The returned value is a number (integer or floating point).
            By default this function returns `1`.
         '''
-        return 1
+        cost = 0
+        x = state[0]
+        y = state[1]
+
+        cost = self.getAttribute((x,y),'cost')
+
+       
+        if(self.ACTIONS == 'Load'):
+            cost = 4
+
+        if(self.ACTIONS == 'Deliver'):
+            cost = 4
+
+        if(state2[2] > 0):
+            cost += 6
+
+        # if(self.isShop1(state2) and self.ACTIONS == 'Load'):
+        #     cost = 3
+
+        # if(self.isShop2(state2) and self.ACTIONS == 'Load'):
+        #     cost = 4
+
+        # if(state2[2] == 0):
+        #     cost = 1
+
+        # if(state[2] == 1):
+        #     cost = 2
+
+        # if(self.state[2] > 0):
+        #     cost = 6
+
+
+        return cost
 
 
     def heuristic(self, state):
@@ -125,8 +157,8 @@ class GameProblem(SearchProblem):
             .format(size = self.MAP_SIZE, initial = initial_state, final = final_state))
 
 
-        #algorithm= simpleai.search.astar
-        algorithm= simpleai.search.breadth_first
+        algorithm= simpleai.search.astar
+        #algorithm= simpleai.search.breadth_first
         #algorithm= simpleai.search.depth_first
         #algorithm= simpleai.search.limited_depth_first
 
