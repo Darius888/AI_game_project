@@ -33,10 +33,7 @@ class GameProblem(SearchProblem):
         '''Returns a LIST of the actions that may be executed in this state
         '''
         acciones = []
-        x = state[0]
-        y = state[1]
         pizzas = state[2]
-
 
         if self.canMove(state, self.MOVES[0]): 
             acciones.append(self.MOVES[0])
@@ -88,40 +85,45 @@ class GameProblem(SearchProblem):
            The returned value is a number (integer or floating point).
            By default this function returns `1`.
         '''
-        return 1
+        cost = 0
+        x = state[0]
+        y = state[1]
+
+        cost = self.getAttribute((x,y),'cost')
+
+       
+        if(self.ACTIONS == 'Load'):
+            cost = 4
+
+        if(self.ACTIONS == 'Deliver'):
+            cost = 4
+
+        if(state2[2] > 0):
+            cost += 6
+
+        # if(self.isShop1(state2) and self.ACTIONS == 'Load'):
+        #     cost = 3
+
+        # if(self.isShop2(state2) and self.ACTIONS == 'Load'):
+        #     cost = 4
+
+        # if(state2[2] == 0):
+        #     cost = 1
+
+        # if(state[2] == 1):
+        #     cost = 2
+
+        # if(self.state[2] > 0):
+        #     cost = 6
+
+
+        return cost
 
 
     def heuristic(self, state):
         '''Returns the heuristic for `state`
         '''
-        x = state[0]
-        y = state[1]
-        pizzas = state[2]
-        customer_x = state[3]
-        customer_y = state[4]
-        orders_left = state[5]
-
-        shop_x = self.SHOPS[0][0]
-        shop_y = self.SHOPS[0][1]
-
-        distance = 0
-        if (pizzas < orders_left):
-            man_shop_dist = abs(x - shop_x) + abs(y - shop_y)
-            distance += man_shop_dist
-
-        if (orders_left != 0):
-            shop_customer_dist = abs(shop_x - customer_x) + abs(shop_y - customer_y)
-            man_customer_dist = abs(x - customer_x) + abs(y - customer_y)
-            distance += min(shop_customer_dist, man_customer_dist)
-
-            customer_back_dist =  abs(customer_x - self.GOAL[0]) + abs(customer_y - self.GOAL[1])
-            distance += customer_back_dist
-
-        if (orders_left == 0):
-            man_back_dist = abs(x - self.GOAL[0]) + abs(y - self.GOAL[1])
-            distance += man_back_dist
-
-        return distance
+        return 0
 
 
     def setup (self):
@@ -139,31 +141,14 @@ class GameProblem(SearchProblem):
         print 'POSITIONS: ', self.POSITIONS, '\n'
         print 'CONFIG: ', self.CONFIG, '\n'
         print 'CUSTOMERS', self.CUSTOMERS, '\n'
-        print 'SHOPS', self.SHOPS, '\n'
-    
-        # Constraints for basic version
-        if len(self.CUSTOMERS) != 1:
-            raise ValueError("There must be exactly one customer in the basic version. "\
-                'Currently: {customers}'.format(customers = len(self.CUSTOMERS)))
+        print 'SHOPS', self.SHOPS, '\n'   
 
-        if len(self.SHOPS) != 1:
-            raise ValueError("There must be exactly one shop in the basic version. "\
-                'Currently: {shops}'.format(shops = len(self.SHOPS)))
+        # state: (x, y, pizzas, (customer_1_x, customer_1_y, customer_1_orders, customer_2_x, ...))
+        stateClass = StateClass(self.AGENT_START[0], self.AGENT_START[1], 0, self.CUSTOMERS)
+        initial_state = stateClass.toState()
 
-        pizzas_to_order = self.CUSTOMERS.values()[0]
-        if pizzas_to_order > 2:
-            raise ValueError('The customer cannot order more than 2 pizzas in the basic version. '\
-                'Currently wants to order: {pizzas}'.format(pizzas = pizzas_to_order))         
-
-        # only 1 customer in basic version
-        customer_position = self.CUSTOMERS.keys()[0]
-        customer_orders = self.CUSTOMERS[customer_position]
-
-        # state: (x, y, pizzas, customer_x, customer_y, orders_left)
-        initial_state = (self.AGENT_START[0], self.AGENT_START[1], 0, 
-            customer_position[0], customer_position[1], customer_orders)
-        final_state = (self.AGENT_START[0], self.AGENT_START[1], 0, 
-            customer_position[0], customer_position[1], 0)
+        stateClass.emptyAllOrders()
+        final_state = stateClass.toState()
 
         # validation and constraints
         if not self.isInMapBounds(initial_state) or not self.isInMapBounds(final_state):
@@ -172,7 +157,6 @@ class GameProblem(SearchProblem):
             .format(size = self.MAP_SIZE, initial = initial_state, final = final_state))
 
 
-        #algorithm= simpleai.search.greedy
         algorithm= simpleai.search.astar
         #algorithm= simpleai.search.breadth_first
         #algorithm= simpleai.search.depth_first
@@ -182,7 +166,7 @@ class GameProblem(SearchProblem):
         
     def printState (self,state):
         '''Return a string to pretty-print the state '''
-        
+
         pps=state
         return (pps)
 
@@ -191,8 +175,11 @@ class GameProblem(SearchProblem):
             MUST return None if the position is not a customer.
             This information is used to show the proper customer image.
         '''
-        orders = state[5]
         if self.isCustomer(state):
+            x = state[0]
+            y = state[1]
+            stateClass = StateClass.fromState(state)
+            orders = stateClass.customers[(x, y)]
             return orders
 
         return None
@@ -206,21 +193,19 @@ class GameProblem(SearchProblem):
         x = state[0]
         y = state[1]
         pizzas = state[2]
-        customer_x = state[3]
-        customer_y = state[4]
-        orders_left = state[5]
+        customers = state[3]
 
         if direction not in self.MOVES:
             raise ValueError('Given direction must be one of: ' + self.MOVES + ' but is: ' + direction)
 
         if direction == self.MOVES[0]:
-            next_state = (x-1, y, pizzas, customer_x, customer_y, orders_left)
+            next_state = (x-1, y, pizzas, customers)
         elif direction == self.MOVES[1]:
-            next_state = (x, y-1, pizzas, customer_x, customer_y, orders_left)
+            next_state = (x, y-1, pizzas, customers)
         elif direction == self.MOVES[2]:
-            next_state = (x+1, y, pizzas, customer_x, customer_y, orders_left)
+            next_state = (x+1, y, pizzas, customers)
         elif direction == self.MOVES[3]:
-            next_state = (x, y+1, pizzas, customer_x, customer_y, orders_left)
+            next_state = (x, y+1, pizzas, customers)
 
         return next_state
 
@@ -229,28 +214,28 @@ class GameProblem(SearchProblem):
     def loadPizzas(self, state):
         x = state[0]
         y = state[1]
-        customer_x = state[3]
-        customer_y = state[4]
-        orders_left = state[5]
+        customers = state[3]
 
-        pizzas = min(self.MAXBAGS, orders_left)
-        next_state = (x, y, pizzas, customer_x, customer_y, orders_left)        
+        pizzas = self.MAXBAGS # min(self.MAXBAGS, orders_left) TODO orders left or how many pizzas to load
+        next_state = (x, y, pizzas, customers)        
 
         return next_state
 
 
     # Computes the next state when 'deliver' action is applied
     def deliver(self, state):
+        stateClass = StateClass.fromState(state)
         x = state[0]
         y = state[1]
         pizzas = state[2]
-        customer_x = state[3]
-        customer_y = state[4]
-        orders = state[5]
+        orders = stateClass.customers[(x, y)]
 
         orders_left = max(orders - pizzas, 0)
         pizzas_left = max(pizzas - orders, 0)
-        next_state = (x, y, pizzas_left, customer_x, customer_y, orders_left)        
+
+        stateClass.pizzas = pizzas_left
+        stateClass.customers[(x, y)] = orders_left
+        next_state = stateClass.toState()   
 
         return next_state
 
@@ -380,3 +365,53 @@ class GameProblem(SearchProblem):
         return True
         
     # END initializeProblem 
+
+class StateClass:
+ 
+    def __init__(self, x, y, pizzas, customers):
+        self.x = x
+        self.y = y
+        self.pizzas = pizzas
+        self.customers = customers
+
+    def toState(self):
+        return (self.x, self.y, self.pizzas, self.customersToTuple(self.customers))
+
+    def customersToTuple(self, dict):
+        temp_list = []
+        for key in dict.keys():
+            temp_list.append(key[0])
+            temp_list.append(key[1])
+            temp_list.append(dict[key])
+
+        return tuple(temp_list)
+
+    def emptyAllOrders(self):
+        for key in self.customers.keys():
+            self.customers[key] = 0
+
+    @staticmethod
+    def fromState(state):
+        print "state", state
+        customers_list = list(state[3])
+        customers = {}
+
+        if (len(customers_list) % 3) != 0:
+            raise ValueError('Incorrect state. Customers tuple has a bad format. '\
+                'Should contain triplets: customer_x, customer_y, orders_left, '\
+                'but is: {list}'.format(list = customers_list))
+
+        index = 0
+        while index < len(customers_list):
+            x = customers_list[index]
+            y = customers_list[index + 1]
+            orders = customers_list[index + 2]
+        
+            customers[(x, y)] = orders
+            index += 3
+
+        x = state[0]
+        y = state[1]
+        pizzas = state[2]
+
+        return StateClass(x, y , pizzas, customers)

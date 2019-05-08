@@ -3,7 +3,7 @@ configuration = {
 "tile_size": 80, 
 "type": "load", #random
 "seed": None,
-"file": "./student/map3.txt",
+"file": "./student_adv/map.txt",
 "map_size": [10, 5],
 "delay": 0.1,
 "debugMap": False,
@@ -124,6 +124,32 @@ configuration = {
             {"agent":None,"image": "default"},
         "attributes":
             {"cost": 1, "blocked": True},
+        },
+    "dessert" : {
+        "graphics":{
+            "default": "game/graphics/terrains/desert100.png",
+            "traversed": "game/graphics/terrains/desertTraversed100.png",
+            },
+        "id":  "dessert",
+        "marker": 'D',
+        "num": 0,
+        "state":
+            {"agent":None,"image": "default"},
+        "attributes":
+            {"cost": 4, "blocked": True},
+        },
+    "forest" : {
+        "graphics":{
+            "default": "game/graphics/terrains/forest100.png",
+            "traversed": "game/graphics/terrains/forestTraversed100.png",
+            },
+        "id":  "forest",
+        "marker": 'F',
+        "num": 0,
+        "state":
+            {"agent":None,"image": "default"},
+        "attributes":
+            {"cost": 100, "blocked": True},
         }
     }   
 }
