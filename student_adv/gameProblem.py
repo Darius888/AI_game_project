@@ -50,8 +50,12 @@ class GameProblem(SearchProblem):
         if self.isShop(state) and pizzas < self.MAXBAGS:
             acciones.append(self.ACTIONS[0])
 
-        if self.isCustomer(state) and pizzas > 0:
-            acciones.append(self.ACTIONS[1])
+        if self.isCustomer(state):
+            stateClass = StateClass.fromState(state)
+            orders = stateClass.customers[(stateClass.x, stateClass.y)]
+
+            if pizzas > 0 and orders > 0:
+                acciones.append(self.ACTIONS[1])
 
         return acciones
     
@@ -214,9 +218,10 @@ class GameProblem(SearchProblem):
     def loadPizzas(self, state):
         x = state[0]
         y = state[1]
+        pizzas = state[2]
         customers = state[3]
 
-        pizzas = self.MAXBAGS # min(self.MAXBAGS, orders_left) TODO orders left or how many pizzas to load
+        pizzas += 1
         next_state = (x, y, pizzas, customers)        
 
         return next_state
@@ -230,8 +235,10 @@ class GameProblem(SearchProblem):
         pizzas = state[2]
         orders = stateClass.customers[(x, y)]
 
-        orders_left = max(orders - pizzas, 0)
-        pizzas_left = max(pizzas - orders, 0)
+        # orders_left = max(orders - pizzas, 0)
+        # pizzas_left = max(pizzas - orders, 0)
+        orders_left = orders - 1
+        pizzas_left = pizzas - 1
 
         stateClass.pizzas = pizzas_left
         stateClass.customers[(x, y)] = orders_left
@@ -392,7 +399,6 @@ class StateClass:
 
     @staticmethod
     def fromState(state):
-        print "state", state
         customers_list = list(state[3])
         customers = {}
 
