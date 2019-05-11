@@ -3,7 +3,7 @@ configuration = {
 "tile_size": 80, 
 "type": "load", #random
 "seed": None,
-"file": "./student_adv/map.txt",
+"file": "./student_adv/mapDessertForest2Pizzas2Customers.txt",
 "map_size": [10, 5],
 "delay": 0.1,
 "debugMap": False,
