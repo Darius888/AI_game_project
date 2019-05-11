@@ -22,7 +22,7 @@ class GameProblem(SearchProblem):
     AGENT_START=None
     SHOPS=None
     CUSTOMERS=None
-    MAXBAGS = 2
+    MAXBAGS = 0
     # Map size (x-dimension size, y-dimension size)
     MAP_SIZE = None
 
@@ -97,18 +97,19 @@ class GameProblem(SearchProblem):
         cost = 0
         x = state[0]
         y = state[1]
+        load = state2[2]
 
         cost = self.getAttribute((x,y),'cost')
+        cost += load
+        
+        # if(state2[2] > 0):
+        #     cost += 6
 
-       
         if(self.ACTIONS == 'Load'):
             cost = 4
 
         if(self.ACTIONS == 'Deliver'):
             cost = 4
-
-        if(state2[2] > 0):
-            cost += 6
 
         # if(self.isShop1(state2) and self.ACTIONS == 'Load'):
         #     cost = 3
@@ -277,12 +278,14 @@ class GameProblem(SearchProblem):
         self.MAP_SIZE = {'x': len(self.MAP), 'y': len(self.MAP[0])}
         self.CUSTOMERS = self.getCustomers()
         self.SHOPS = self.getShops()
+        self.MAXBAGS = self.CONFIG['maxBags']
 
         print '\nMAP: ', self.MAP, '\n'
         print 'POSITIONS: ', self.POSITIONS, '\n'
         print 'CONFIG: ', self.CONFIG, '\n'
         print 'CUSTOMERS', self.CUSTOMERS, '\n'
         print 'SHOPS', self.SHOPS, '\n'   
+
 
         # state: (x, y, pizzas, (customer_1_x, customer_1_y, customer_1_orders, customer_2_x, ...))
         stateClass = StateClass(self.AGENT_START[0], self.AGENT_START[1], 0, self.CUSTOMERS)
