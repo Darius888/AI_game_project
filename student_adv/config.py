@@ -11,7 +11,7 @@ configuration = {
 "save": False, #True
 "hazards": False,
 "basicTile": "street",
-"maxBags": 7, 
+"maxBags": 2, 
 "loadCost": 4,
 "deliverCost": 4,
 "agent":{
