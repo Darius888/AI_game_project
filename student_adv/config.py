@@ -11,7 +11,9 @@ configuration = {
 "save": False, #True
 "hazards": False,
 "basicTile": "street",
-"maxBags": 2, 
+"maxBags": 7, 
+"loadCost": 4,
+"deliverCost": 4,
 "agent":{
     "graphics":{ 
         "default": "game/graphics/logistics/deliver103.jpg"

@@ -13,9 +13,9 @@ import math
 class GameProblem(SearchProblem):
 
     # Object attributes, can be accessed in the methods below
-    
     MAP=None
     POSITIONS=None
+    # state: (x, y, pizzas, (cust_1_x, cust_1_y, cust_1_orders, cust_2_x, ...))
     INITIAL_STATE=None
     GOAL=None
     CONFIG=None
@@ -23,6 +23,7 @@ class GameProblem(SearchProblem):
     SHOPS=None
     CUSTOMERS=None
     MAXBAGS = 0
+    
     # Map size (x-dimension size, y-dimension size)
     MAP_SIZE = None
 
@@ -50,11 +51,8 @@ class GameProblem(SearchProblem):
         if self.canMove(state, self.MOVES[3]):
             acciones.append(self.MOVES[3])
             
-        if self.isShop(state) and pizzas < self.MAXBAGS and pizzas < stateClass.getNumberOfLeftOrders():
+        if self.isShop(state) and pizzas < self.MAXBAGS and pizzas < stateClass.getNumberOfOrdersLeft():
             acciones.append(self.ACTIONS[0])
-
-        if not pizzas < stateClass.getNumberOfLeftOrders():
-            print "--------------------------------P", pizzas, "| O", stateClass.getNumberOfLeftOrders(), "| C", stateClass.customers
 
         if self.isCustomer(state):
             orders = stateClass.customers[(stateClass.x, stateClass.y)]
@@ -97,85 +95,48 @@ class GameProblem(SearchProblem):
         cost = 0
         x = state[0]
         y = state[1]
-        load = state2[2]
+        load = state[2]
 
         cost = self.getAttribute((x,y),'cost')
         cost += load
-        
-        # if(state2[2] > 0):
-        #     cost += 6
 
         if(self.ACTIONS == 'Load'):
-            cost = 4
+            cost = self.CONFIG['loadCost']
 
         if(self.ACTIONS == 'Deliver'):
-            cost = 4
-
-        # if(self.isShop1(state2) and self.ACTIONS == 'Load'):
-        #     cost = 3
-
-        # if(self.isShop2(state2) and self.ACTIONS == 'Load'):
-        #     cost = 4
-
-        # if(state2[2] == 0):
-        #     cost = 1
-
-        # if(state[2] == 1):
-        #     cost = 2
-
-        # if(self.state[2] > 0):
-        #     cost = 6
-
+            cost = self.CONFIG['deliverCost']
 
         return cost
+
 
     def heuristic(self, state):
         '''Returns the heuristic for `state`
         '''
-        # print "------------------------------------------------------"
         stateClass = StateClass.fromState(state)
-        orders = stateClass.getNumberOfLeftOrders()
+        orders = stateClass.getNumberOfOrdersLeft()
         distance = 0
 
-        # initial situation
+        # Man needs to take a pizza first
         if orders > 0 and stateClass.pizzas == 0:
             man_shop_dists = []
             for shop in self.SHOPS:
                 man_shop_dist = self.manhattanDistance(shop, (stateClass.x, stateClass.y))
                 man_shop_dists.append(man_shop_dist)
-            alfa = min(man_shop_dists)
-            # print "man - shop", alfa
-            distance += alfa
+            
+            # min. dist between man and shop
+            distance += min(man_shop_dists)
         
+        # Otherwise he needs to go to the customer
         elif orders > 0 and stateClass.pizzas > 0:
             man_cust_dists = []
             for cust in stateClass.getCustomersWithOrders():
                 man_cust_dist = self.manhattanDistance(cust, (stateClass.x, stateClass.y))
                 man_cust_dists.append(man_cust_dist)
-            alfa = min(man_cust_dists)
-            # print "man - cust", alfa
-            distance += alfa
-
             
+            # min. dist between man and customer
+            distance += min(man_cust_dists)
 
-        # get min distance between shops and customers
-        # shops_and_customers = []
-        # shops_and_customers.extend(self.SHOPS)
-        # shops_and_customers.extend(stateClass.getCustomersWithOrders())
-        # routes = []
-        # routes = list(itertools.combinations(shops_and_customers, 2))
-        # shop_customer_dists = []
-        # print "bef", len(routes)
-        # for route in routes[:]:
-        #     if (route[0] in self.SHOPS and route[1] in self.SHOPS) or (route[0] in self.CUSTOMERS.values() and route[1] in self.CUSTOMERS.values()):
-        #         print "REM", route
-        #         routes.remove(route)               
-        #     else:
-        #         shop_customer_dists.append(self.manhattanDistance(route[0], route[1]))
-        # print routes
-        # print "aft", len(routes)
-        # print shop_customer_dists
-
+        # Needs to traverse minimal path from shops to customers
         shop_customer_dists = []
         for customer in stateClass.getCustomersWithOrders():
             temp_dists = []
@@ -184,89 +145,49 @@ class GameProblem(SearchProblem):
             shops_and_customers.append(customer)
 
             routes = list(itertools.combinations(shops_and_customers, 2))
-            #print "bef", len(routes)
             for route in routes[:]:
                 if (route[0] in self.SHOPS and route[1] in self.SHOPS):
-                   # print "REM", route
                     routes.remove(route)               
                 else:
                     temp_dists.append(self.manhattanDistance(route[0], route[1]))
             
             shop_customer_dists.append(min(temp_dists))
-            # print routes
-            # print "aft", len(routes)
-        # print shop_customer_dists
 
         coeficient = int(math.ceil((orders - stateClass.pizzas)/float(self.MAXBAGS)))
         shop_customer_dists.sort()
         shop_customer_dists = shop_customer_dists[0:coeficient]
-        alfa = sum(shop_customer_dists) # min(shop_customer_dists) * int(math.ceil((orders - stateClass.pizzas)/float(self.MAXBAGS)))
-        #print "shops - customers", alfa, "| dists", shop_customer_dists #, "| min ", min(shop_customer_dists), "ceil ", int(math.ceil((orders - stateClass.pizzas)/self.MAXBAGS)), "ord-piz ", (orders - stateClass.pizzas), "/MAX", (orders - stateClass.pizzas)/float(self.MAXBAGS)
-        distance += alfa
 
-        # get num of loads and delivers
-        alfa = orders
-        #print "delivers", alfa
-        distance += alfa
-        
-        alfa = orders - stateClass.pizzas # math.ceil((orders - stateClass.pizzas)/self.MAXBAGS)
-        #print "loads", alfa
-        distance += alfa
+        # min. of distances left between customers and shops
+        distance += sum(shop_customer_dists)
 
-        # min dist between customers if maxbags > 
+        # num. of loads and delivers left
+        distance += orders * self.CONFIG['loadCost'] # multipled by cost of "load" action gives much better results
+        distance += (orders - stateClass.pizzas) * self.CONFIG['deliverCost'] # multipled by cost of "delivery" action gives much better results
+
+        # Needs to move between customers if have sufficient pizzas
         if (self.MAXBAGS >= orders or orders <= stateClass.pizzas) and len(stateClass.getCustomersWithOrders()) > 1:
             routes_between_customers = list(itertools.combinations(stateClass.getCustomersWithOrders(), 2))
             cust_cust_dist = []
             for route in routes_between_customers:
                 cust_cust_dist.append(self.manhattanDistance(route[0], route[1]))
             
-            alfa = max(len(stateClass.getCustomersWithOrders()) - 1, 0) * min(cust_cust_dist)
-            #print "cust - cust", alfa
-            distance += alfa
+            # min. dist between customers have sufficient pizzas
+            distance += max(len(stateClass.getCustomersWithOrders()) - 1, 0) * min(cust_cust_dist)
 
-        # min between customer and goal
-        if stateClass.getNumberOfLeftOrders() != 0:
+        # Needs to go to goal after delivered last pizza
+        if stateClass.getNumberOfOrdersLeft() != 0:
             cust_goal_dists = []
             for customer in stateClass.getCustomersWithOrders():
                 cust_goal_dists.append(self.manhattanDistance(customer, (self.GOAL[0], self.GOAL[1])))
 
-            alfa = min(cust_goal_dists)
-            #print "cust - goal", alfa
-            distance += alfa
+            # min. between last customer and goal
+            distance += min(cust_goal_dists)
         else:
-            alfa = self.manhattanDistance((stateClass.x, stateClass.y), (self.GOAL[0], self.GOAL[1]))
-            #print "man - goal", alfa
-            distance += alfa
+            # min. between man and goal
+            distance += self.manhattanDistance((stateClass.x, stateClass.y), (self.GOAL[0], self.GOAL[1]))
         
-        # print "h", distance
-        #print stateClass.x, stateClass.y, "| P", stateClass.pizzas, "| O", stateClass.getNumberOfLeftOrders(), "| H", distance, "| C", stateClass.getCustomersWithOrders()
         return distance
 
-    def manhattanDistance(self, point_1, point_2):
-        x1 = point_1[0]
-        y1 = point_1[1]
-        x2 = point_2[0]
-        y2 = point_2[1]
-
-        return abs(x1 - x2) + abs(y1 - y2)
-
-    def computePathCost(self, state, route):
-        distance = 0
-        x = state[0]
-        y = state[1]
-        route = list(route)
-        route.insert(0, (x, y))
-        route.append((self.GOAL[0], self.GOAL[1]))
-
-        index = 0
-        for index in range(len(route) - 2):
-            start_x = route[index][0]
-            start_y = route[index][1]
-            end_x = route[index + 1][0]
-            end_y = route[index + 1][1]
-            distance += abs(start_x - end_x) + abs(start_y - end_y)
-
-        return distance
 
     def setup (self):
         '''This method must create the initial state, final state (if desired) and specify the algorithm to be used.
@@ -286,8 +207,6 @@ class GameProblem(SearchProblem):
         print 'CUSTOMERS', self.CUSTOMERS, '\n'
         print 'SHOPS', self.SHOPS, '\n'   
 
-
-        # state: (x, y, pizzas, (customer_1_x, customer_1_y, customer_1_orders, customer_2_x, ...))
         stateClass = StateClass(self.AGENT_START[0], self.AGENT_START[1], 0, self.CUSTOMERS)
         initial_state = stateClass.toState()
 
@@ -300,19 +219,20 @@ class GameProblem(SearchProblem):
             'Map size: {size}. Initial state: {initial}. Final state: {final}. Mind the index values.'\
             .format(size = self.MAP_SIZE, initial = initial_state, final = final_state))
 
-
         algorithm= simpleai.search.astar
         #algorithm= simpleai.search.breadth_first
         #algorithm= simpleai.search.depth_first
-        #algorithm= simpleai.search.limited_depth_first
+        #algorithm= simpleai.search.greedy
 
         return initial_state,final_state,algorithm
         
+
     def printState (self,state):
         '''Return a string to pretty-print the state '''
 
         pps=state
         return (pps)
+
 
     def getPendingRequests (self,state):
         ''' Return the number of pending requests in the given position (0-N). 
@@ -385,6 +305,15 @@ class GameProblem(SearchProblem):
         next_state = stateClass.toState()   
 
         return next_state
+
+
+    def manhattanDistance(self, point_1, point_2):
+        x1 = point_1[0]
+        y1 = point_1[1]
+        x2 = point_2[0]
+        y2 = point_2[1]
+        
+        return abs(x1 - x2) + abs(y1 - y2)
 
 
     def isBuilding(self, state):
@@ -519,7 +448,7 @@ class StateClass:
         self.x = x
         self.y = y
         self.pizzas = pizzas
-        self.customers = customers
+        self.customers = customers # dict -> (x, y) : orders_left
 
     def toState(self):
         return (self.x, self.y, self.pizzas, self.customersToTuple(self.customers))
@@ -538,21 +467,14 @@ class StateClass:
             self.customers[key] = 0
 
     def getCustomersWithOrders(self):
-       
         customers_with_orders = []
         for key in self.customers.keys():
             if self.customers[key] != 0:
-                
                 customers_with_orders.append(key)
 
-        # if len(customers_with_orders) > 1:
-        #     print "customers", self.customers 
         return customers_with_orders
 
-    def getNumberOfLeftOrders(self):
-        if sum(self.customers.values()) > 7:
-            raise ValueError("SUM > 7")
-        # print "----------------------------------------SUM", sum(self.customers.values())
+    def getNumberOfOrdersLeft(self):
         return sum(self.customers.values())
 
     @staticmethod
